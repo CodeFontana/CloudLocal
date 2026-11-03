@@ -74,30 +74,53 @@ public sealed class ClaimFolder
             }
 
             string fileName = Path.GetFileName(file);
+            string claimingPath = Path.Combine(Folder("inflight"), fileName + ".claiming");
             string inflightPath = Path.Combine(Folder("inflight"), fileName);
 
-            if (!TryMove(file, inflightPath))
+            if (!TryMove(file, claimingPath))
             {
                 continue;
             }
 
-            MessageEnvelope? envelope = await ReadAsync(inflightPath, cancellationToken);
+            MessageEnvelope? envelope;
+
+            try
+            {
+                envelope = await ReadAsync(claimingPath, cancellationToken);
+            }
+            catch
+            {
+                TryMove(claimingPath, file);
+                throw;
+            }
 
             if (envelope is null || string.IsNullOrWhiteSpace(envelope.MessageId))
             {
+                TryMove(claimingPath, file);
                 continue;
             }
 
             if (envelope.DequeueCount >= _maxReceives)
             {
-                TryMove(inflightPath, Path.Combine(Folder(_terminalFolder), fileName));
+                TryMove(claimingPath, Path.Combine(Folder(_terminalFolder), fileName));
                 continue;
             }
 
             envelope.DequeueCount++;
             envelope.Receipt = Guid.NewGuid().ToString("N");
             envelope.NextVisibleAt = _timeProvider.GetUtcNow().Add(visibility);
-            await AtomicFile.WriteJsonAsync(inflightPath, envelope, JsonOptions, cancellationToken);
+
+            try
+            {
+                await AtomicFile.WriteJsonAsync(inflightPath, envelope, JsonOptions, cancellationToken);
+            }
+            catch
+            {
+                TryMove(claimingPath, file);
+                throw;
+            }
+
+            File.Delete(claimingPath);
             received.Add(ToStored(envelope));
         }
 
@@ -132,10 +155,18 @@ public sealed class ClaimFolder
         }
     }
 
-    public async Task<IReadOnlyList<StoredMessage>> ListTerminalAsync(CancellationToken cancellationToken)
+    public Task<IReadOnlyList<StoredMessage>> ListReadyAsync(CancellationToken cancellationToken)
     {
-        string directory = Folder(_terminalFolder);
+        return ListFolderAsync(Folder("ready"), cancellationToken);
+    }
 
+    public Task<IReadOnlyList<StoredMessage>> ListTerminalAsync(CancellationToken cancellationToken)
+    {
+        return ListFolderAsync(Folder(_terminalFolder), cancellationToken);
+    }
+
+    private async Task<IReadOnlyList<StoredMessage>> ListFolderAsync(string directory, CancellationToken cancellationToken)
+    {
         if (!Directory.Exists(directory))
         {
             return [];
@@ -147,6 +178,7 @@ public sealed class ClaimFolder
         {
             cancellationToken.ThrowIfCancellationRequested();
             MessageEnvelope? envelope = await ReadAsync(file, cancellationToken);
+
             if (envelope is not null && !string.IsNullOrWhiteSpace(envelope.MessageId))
             {
                 messages.Add(ToStored(envelope));

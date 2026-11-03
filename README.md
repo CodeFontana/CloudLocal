@@ -18,7 +18,7 @@ Application code calls a small port such as `IBlobStore`. The file implementatio
 - [CodeFoxtrot.CloudLocal.Tables](https://www.nuget.org/packages/CodeFoxtrot.CloudLocal.Tables/) — entities addressed by partition key and row key
 - [CodeFoxtrot.CloudLocal.Queues](https://www.nuget.org/packages/CodeFoxtrot.CloudLocal.Queues/) — storage queues with visibility timeout and a poison folder
 - [CodeFoxtrot.CloudLocal.Vault](https://www.nuget.org/packages/CodeFoxtrot.CloudLocal.Vault/) — secrets, RSA keys, and certificates
-- [CodeFoxtrot.CloudLocal.Messaging](https://www.nuget.org/packages/CodeFoxtrot.CloudLocal.Messaging/) — queues and topics with subscriptions, peek-lock, abandon, and dead-letter
+- [CodeFoxtrot.CloudLocal.Messaging](https://www.nuget.org/packages/CodeFoxtrot.CloudLocal.Messaging/) — queues and topics with subscriptions, peek-lock, abandon, and dead-letter. A topic publish is kept and copied into a subscription when that subscription is created.
 
 Pass one root directory into each store. Data is written under `blobs`, `tables`, `queues`, `vault`, and `messaging` inside that root. The root holds secret values and private keys. Keep it out of source control.
 

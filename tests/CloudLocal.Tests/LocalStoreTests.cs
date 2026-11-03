@@ -126,26 +126,36 @@ public sealed class LocalStoreTests
     }
 
     [Fact]
-    public async Task Topic_fans_out_and_rejects_an_empty_topic()
+    public async Task Topic_publish_waits_for_subscriptions_without_duplicating()
     {
         using TempRoot temp = new();
         FileTopicMessenger topics = new(temp.Root);
         await topics.CreateTopicAsync("events");
-        await Assert.ThrowsAsync<InvalidOperationException>(() => topics.PublishAsync("events", TextBytes("lost")));
+        await topics.PublishAsync("events", TextBytes("held"));
+        await topics.CreateSubscriptionAsync("events", "a");
         await topics.CreateSubscriptionAsync("events", "a");
         await topics.CreateSubscriptionAsync("events", "b");
-        await topics.PublishAsync("events", TextBytes("hello"));
 
-        IReadOnlyList<MessageDelivery> first = await topics.ReceiveAsync("events", "a", TimeSpan.FromSeconds(30), 1);
-        IReadOnlyList<MessageDelivery> second = await topics.ReceiveAsync("events", "b", TimeSpan.FromSeconds(30), 1);
-        Assert.Equal("hello", Encoding.UTF8.GetString(first[0].Body));
-        Assert.Equal("hello", Encoding.UTF8.GetString(second[0].Body));
-        await topics.CompleteAsync("events", "a", first[0].MessageId, first[0].Receipt);
-        await topics.AbandonAsync("events", "b", second[0].MessageId, second[0].Receipt);
+        IReadOnlyList<MessageDelivery> heldOnA = await topics.ReceiveAsync("events", "a", TimeSpan.FromSeconds(30), 2);
+        IReadOnlyList<MessageDelivery> heldOnB = await topics.ReceiveAsync("events", "b", TimeSpan.FromSeconds(30), 2);
+        Assert.Single(heldOnA);
+        Assert.Single(heldOnB);
+        Assert.Equal("held", Encoding.UTF8.GetString(heldOnA[0].Body));
+        Assert.Equal("held", Encoding.UTF8.GetString(heldOnB[0].Body));
+        await topics.CompleteAsync("events", "a", heldOnA[0].MessageId, heldOnA[0].Receipt);
+        await topics.AbandonAsync("events", "b", heldOnB[0].MessageId, heldOnB[0].Receipt);
         IReadOnlyList<MessageDelivery> abandoned = await topics.ReceiveAsync("events", "b", TimeSpan.FromSeconds(30), 1);
-        Assert.Equal(second[0].MessageId, abandoned[0].MessageId);
+        Assert.Equal(heldOnB[0].MessageId, abandoned[0].MessageId);
         await topics.DeadLetterAsync("events", "b", abandoned[0].MessageId, abandoned[0].Receipt);
         Assert.Empty(await topics.ReceiveAsync("events", "b", TimeSpan.FromSeconds(30), 1));
+
+        await topics.PublishAsync("events", TextBytes("hello"));
+        IReadOnlyList<MessageDelivery> helloOnA = await topics.ReceiveAsync("events", "a", TimeSpan.FromSeconds(30), 2);
+        IReadOnlyList<MessageDelivery> helloOnB = await topics.ReceiveAsync("events", "b", TimeSpan.FromSeconds(30), 2);
+        Assert.Single(helloOnA);
+        Assert.Single(helloOnB);
+        Assert.Equal("hello", Encoding.UTF8.GetString(helloOnA[0].Body));
+        Assert.Equal("hello", Encoding.UTF8.GetString(helloOnB[0].Body));
     }
 
     [Fact]

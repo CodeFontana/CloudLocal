@@ -81,30 +81,36 @@ public sealed class FileTopicMessenger : ITopicMessenger
         return Task.CompletedTask;
     }
 
-    public Task CreateSubscriptionAsync(string topic, string subscription, CancellationToken cancellationToken = default)
+    public async Task CreateSubscriptionAsync(string topic, string subscription, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        Mailbox(topic, subscription).Ensure();
-        return Task.CompletedTask;
+        string path = LocalPath.Child(SubscriptionsRoot(topic), subscription);
+        bool created = !Directory.Exists(path);
+        ClaimFolder mailbox = new(path, _timeProvider, _maxReceives, "deadletter");
+        mailbox.Ensure();
+
+        if (!created)
+        {
+            return;
+        }
+
+        foreach (StoredMessage message in await Outbox(topic).ListReadyAsync(cancellationToken))
+        {
+            await mailbox.EnqueueAsync(message.Body, cancellationToken);
+        }
     }
 
     public async Task PublishAsync(string topic, ReadOnlyMemory<byte> body, CancellationToken cancellationToken = default)
     {
+        await Outbox(topic).EnqueueAsync(body, cancellationToken);
         string root = SubscriptionsRoot(topic);
 
         if (!Directory.Exists(root))
         {
-            throw new InvalidOperationException($"Topic '{topic}' has no subscriptions.");
+            return;
         }
 
-        string[] subscriptions = Directory.GetDirectories(root);
-
-        if (subscriptions.Length == 0)
-        {
-            throw new InvalidOperationException($"Topic '{topic}' has no subscriptions.");
-        }
-
-        foreach (string subscriptionPath in subscriptions)
+        foreach (string subscriptionPath in Directory.GetDirectories(root))
         {
             ClaimFolder mailbox = new(subscriptionPath, _timeProvider, _maxReceives, "deadletter");
             await mailbox.EnqueueAsync(body, cancellationToken);
@@ -140,6 +146,11 @@ public sealed class FileTopicMessenger : ITopicMessenger
     private ClaimFolder Mailbox(string topic, string subscription)
     {
         return new ClaimFolder(LocalPath.Child(SubscriptionsRoot(topic), subscription), _timeProvider, _maxReceives, "deadletter");
+    }
+
+    private ClaimFolder Outbox(string topic)
+    {
+        return new ClaimFolder(LocalPath.Child(_root, "messaging", "topics", topic, "outbox"), _timeProvider, _maxReceives, "deadletter");
     }
 
     private static MessageDelivery ToDelivery(StoredMessage message)
