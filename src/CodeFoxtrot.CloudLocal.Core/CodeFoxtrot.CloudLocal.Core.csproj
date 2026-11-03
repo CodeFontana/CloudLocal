@@ -3,6 +3,9 @@
     <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
     <IsPackable>true</IsPackable>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Version>1.0.1</Version>
+    <AssemblyVersion>1.0.1.0</AssemblyVersion>
+    <FileVersion>1.0.1.0</FileVersion>
     <PackageId>CodeFoxtrot.CloudLocal.Core</PackageId>
     <Product>CloudLocal.Core</Product>
     <Description>Path, atomic file, and claim-folder primitives for CodeFoxtrot.CloudLocal.</Description>
