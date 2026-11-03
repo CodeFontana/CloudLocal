@@ -3,9 +3,9 @@
     <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
     <IsPackable>true</IsPackable>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>1.0.1</Version>
-    <AssemblyVersion>1.0.1.0</AssemblyVersion>
-    <FileVersion>1.0.1.0</FileVersion>
+    <Version>1.0.2</Version>
+    <AssemblyVersion>1.0.2.0</AssemblyVersion>
+    <FileVersion>1.0.2.0</FileVersion>
     <PackageId>CodeFoxtrot.CloudLocal.Messaging</PackageId>
     <Product>CloudLocal.Messaging</Product>
     <Description>Filesystem queues and topics with peek-lock, abandon, and dead-letter.</Description>
