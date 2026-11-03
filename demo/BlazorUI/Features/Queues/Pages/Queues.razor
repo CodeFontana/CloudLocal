@@ -1,0 +1,9 @@
+@page "/queues"
+@rendermode InteractiveServer
+@using BlazorUI.Features.Queues.Components
+
+<PageTitle>Queues</PageTitle>
+<h1>Queues</h1>
+<p class="text-body-secondary">One page for both queue services. The storage queue section deletes a received message. The messaging queue section completes, abandons, or dead-letters a locked message.</p>
+<StorageQueueSection />
+<MessagingQueueSection />

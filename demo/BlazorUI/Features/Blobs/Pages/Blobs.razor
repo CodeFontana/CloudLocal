@@ -1,0 +1,79 @@
+@page "/blobs"
+@rendermode InteractiveServer
+@inherits DemoPage
+@using System.Text
+@using CodeFoxtrot.CloudLocal.Blobs
+@inject IBlobStore Store
+
+<PageTitle>Blobs</PageTitle>
+<h1>Blobs</h1>
+<div class="row g-3">
+    <div class="col-md-4"><label class="form-label" for="blob-container">Container</label><input id="blob-container" class="form-control" @bind="_container" /></div>
+    <div class="col-md-4"><label class="form-label" for="blob-name">Name</label><input id="blob-name" class="form-control" @bind="_name" /></div>
+    <div class="col-md-4"><label class="form-label" for="blob-type">Content type</label><input id="blob-type" class="form-control" @bind="_contentType" /></div>
+    <div class="col-12"><label class="form-label" for="blob-content">Content</label><textarea id="blob-content" class="form-control" rows="4" @bind="_content"></textarea></div>
+</div>
+<div class="d-flex flex-wrap gap-2 my-3">
+    <button class="btn btn-outline-primary" disabled="@IsBusy" @onclick="CreateAsync">Create container</button>
+    <button class="btn btn-primary" disabled="@IsBusy" @onclick="PutAsync">Put</button>
+    <button class="btn btn-primary" disabled="@IsBusy" @onclick="AppendAsync">Append</button>
+    <button class="btn btn-outline-primary" disabled="@IsBusy" @onclick="ReadAsync">Read</button>
+    <button class="btn btn-outline-primary" disabled="@IsBusy" @onclick="ListAsync">List</button>
+    <button class="btn btn-outline-danger" disabled="@IsBusy" @onclick="DeleteAsync">Delete blob</button>
+</div>
+<ActionFeedback Message="@StatusMessage" Detail="@Detail" IsError="@IsError" />
+
+@code {
+    private string _container = "demo";
+    private string _name = "hello.txt";
+    private string _contentType = "text/plain";
+    private string _content = "hello";
+
+    private Task CreateAsync() => RunAsync(async () =>
+    {
+        await Store.CreateContainerAsync(_container);
+        return $"Created container '{_container}'.";
+    });
+
+    private Task PutAsync() => RunAsync(async () =>
+    {
+        byte[] bytes = Encoding.UTF8.GetBytes(_content);
+        await using MemoryStream stream = new(bytes);
+        await Store.PutAsync(_container, _name, stream, new BlobWriteOptions { ContentType = _contentType });
+        return $"Replaced blob '{_container}/{_name}' with {_content.Length} characters ({_contentType}).";
+    });
+
+    private Task AppendAsync() => RunAsync(async () =>
+    {
+        byte[] bytes = Encoding.UTF8.GetBytes(_content);
+        await using MemoryStream stream = new(bytes);
+        await Store.AppendAsync(_container, _name, stream);
+        return $"Appended {_content.Length} characters to blob '{_container}/{_name}'.";
+    });
+
+    private Task ReadAsync() => RunAsync(async () =>
+    {
+        await using BlobRead blob = await Store.OpenReadAsync(_container, _name);
+        using StreamReader reader = new(blob.Content, Encoding.UTF8);
+        string body = await reader.ReadToEndAsync();
+        return new ActionFeedbackResult($"Read blob '{_container}/{_name}'. Content type is {blob.ContentType ?? "(none)"}.", body);
+    });
+
+    private Task ListAsync() => RunAsync(async () =>
+    {
+        List<string> lines = [];
+        await foreach (BlobItem item in Store.ListAsync(_container))
+        {
+            lines.Add($"{item.Name} ({item.Length} bytes)");
+        }
+
+        string? detail = lines.Count == 0 ? null : string.Join(Environment.NewLine, lines);
+        return new ActionFeedbackResult($"Listed {lines.Count} blob(s) in container '{_container}'.", detail);
+    });
+
+    private Task DeleteAsync() => RunAsync(async () =>
+    {
+        await Store.DeleteAsync(_container, _name);
+        return $"Deleted blob '{_container}/{_name}'.";
+    });
+}

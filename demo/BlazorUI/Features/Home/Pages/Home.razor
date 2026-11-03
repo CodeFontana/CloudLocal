@@ -1,0 +1,52 @@
+@page "/"
+@rendermode InteractiveServer
+@inject CloudModeState ModeState
+@inject CloudLocalOptions Options
+@implements IDisposable
+
+<PageTitle>CloudLocal</PageTitle>
+
+<h1>CloudLocal</h1>
+<p>The provider control in the bar chooses <strong>@ProviderLabel(ModeState.Current)</strong> for the next action. Endpoints stay in appsettings. Local files are stored under <code>@Options.RootPath</code>.</p>
+
+<dl class="row">
+    <dt class="col-sm-3">Azure blob URI</dt><dd class="col-sm-9">@Display(Options.Azure.BlobServiceUri)</dd>
+    <dt class="col-sm-3">Azure table URI</dt><dd class="col-sm-9">@Display(Options.Azure.TableServiceUri)</dd>
+    <dt class="col-sm-3">Azure queue URI</dt><dd class="col-sm-9">@Display(Options.Azure.QueueServiceUri)</dd>
+    <dt class="col-sm-3">Azure vault URI</dt><dd class="col-sm-9">@Display(Options.Azure.VaultUri)</dd>
+    <dt class="col-sm-3">Service Bus namespace</dt><dd class="col-sm-9">@Display(Options.Azure.ServiceBusNamespace)</dd>
+    <dt class="col-sm-3">AWS region</dt><dd class="col-sm-9">@Display(Options.Aws.Region)</dd>
+</dl>
+
+@code {
+    protected override void OnInitialized()
+    {
+        ModeState.Changed += HandleChanged;
+    }
+
+    private void HandleChanged()
+    {
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        ModeState.Changed -= HandleChanged;
+    }
+
+    private static string Display(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? "(not set)" : value;
+    }
+
+    private static string ProviderLabel(CloudProviderMode mode)
+    {
+        return mode switch
+        {
+            CloudProviderMode.Local => "local files",
+            CloudProviderMode.Azure => "Azure",
+            CloudProviderMode.Aws => "AWS",
+            _ => mode.ToString()
+        };
+    }
+}

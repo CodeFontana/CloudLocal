@@ -1,0 +1,80 @@
+@page "/tables"
+@rendermode InteractiveServer
+@inherits DemoPage
+@using CodeFoxtrot.CloudLocal.Tables
+@inject ITableStore Store
+
+<PageTitle>Tables</PageTitle>
+<h1>Tables</h1>
+<div class="row g-3">
+    <div class="col-md-3"><label class="form-label" for="table-name">Table</label><input id="table-name" class="form-control" @bind="_table" /></div>
+    <div class="col-md-3"><label class="form-label" for="table-partition">Partition</label><input id="table-partition" class="form-control" @bind="_partition" /></div>
+    <div class="col-md-3"><label class="form-label" for="table-row">Row</label><input id="table-row" class="form-control" @bind="_row" /></div>
+    <div class="col-md-3"><label class="form-label" for="table-label">Label</label><input id="table-label" class="form-control" @bind="_label" /></div>
+</div>
+<div class="d-flex flex-wrap gap-2 my-3">
+    <button class="btn btn-outline-primary" disabled="@IsBusy" @onclick="CreateAsync">Create table</button>
+    <button class="btn btn-primary" disabled="@IsBusy" @onclick="UpsertAsync">Upsert</button>
+    <button class="btn btn-outline-primary" disabled="@IsBusy" @onclick="GetAsync">Get</button>
+    <button class="btn btn-outline-primary" disabled="@IsBusy" @onclick="QueryAsync">Query partition</button>
+    <button class="btn btn-outline-danger" disabled="@IsBusy" @onclick="DeleteAsync">Delete</button>
+</div>
+<ActionFeedback Message="@StatusMessage" Detail="@Detail" IsError="@IsError" />
+
+@code {
+    private string _table = "records";
+    private string _partition = "a";
+    private string _row = "1";
+    private string _label = "one";
+
+    private Task CreateAsync() => RunAsync(async () =>
+    {
+        await Store.CreateTableAsync(_table);
+        return $"Created table '{_table}'.";
+    });
+
+    private Task UpsertAsync() => RunAsync(async () =>
+    {
+        await Store.UpsertAsync(_table, new TableEntity
+        {
+            PartitionKey = _partition,
+            RowKey = _row,
+            Properties = new Dictionary<string, TableValue>
+            {
+                ["label"] = TableValue.FromString(_label),
+                ["count"] = TableValue.FromInteger(1)
+            }
+        });
+        return $"Upserted row '{_partition}/{_row}' in table '{_table}' with label '{_label}'.";
+    });
+
+    private Task GetAsync() => RunAsync(async () =>
+    {
+        TableEntity entity = await Store.GetAsync(_table, _partition, _row);
+        return new ActionFeedbackResult($"Read row '{_partition}/{_row}' from table '{_table}'.", Format(entity));
+    });
+
+    private Task QueryAsync() => RunAsync(async () =>
+    {
+        List<string> lines = [];
+        await foreach (TableEntity entity in Store.QueryAsync(_table, _partition))
+        {
+            lines.Add(Format(entity));
+        }
+
+        string? detail = lines.Count == 0 ? null : string.Join(Environment.NewLine, lines);
+        return new ActionFeedbackResult($"Query of partition '{_partition}' in table '{_table}' returned {lines.Count} row(s).", detail);
+    });
+
+    private Task DeleteAsync() => RunAsync(async () =>
+    {
+        await Store.DeleteAsync(_table, _partition, _row);
+        return $"Deleted row '{_partition}/{_row}' from table '{_table}'.";
+    });
+
+    private static string Format(TableEntity entity)
+    {
+        string label = entity.Properties.TryGetValue("label", out TableValue value) ? value.String ?? "" : "";
+        return $"{entity.PartitionKey}/{entity.RowKey} label={label}";
+    }
+}

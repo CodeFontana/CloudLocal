@@ -1,0 +1,19 @@
+@if (string.IsNullOrWhiteSpace(Message) == false)
+{
+    <div class="alert @(IsError ? "alert-danger" : "alert-success")" role="status">@Message</div>
+}
+@if (string.IsNullOrWhiteSpace(Detail) == false)
+{
+    <pre class="border rounded p-3 mb-0">@Detail</pre>
+}
+
+@code {
+    [Parameter]
+    public string? Message { get; set; }
+
+    [Parameter]
+    public string? Detail { get; set; }
+
+    [Parameter]
+    public bool IsError { get; set; }
+}

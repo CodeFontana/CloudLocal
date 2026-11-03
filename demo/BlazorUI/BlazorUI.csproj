@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>BlazorUI</RootNamespace>
+    <AssemblyName>BlazorUI</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\CodeFoxtrot.CloudLocal.Blobs\CodeFoxtrot.CloudLocal.Blobs.csproj" />
+    <ProjectReference Include="..\..\src\CodeFoxtrot.CloudLocal.Messaging\CodeFoxtrot.CloudLocal.Messaging.csproj" />
+    <ProjectReference Include="..\..\src\CodeFoxtrot.CloudLocal.Queues\CodeFoxtrot.CloudLocal.Queues.csproj" />
+    <ProjectReference Include="..\..\src\CodeFoxtrot.CloudLocal.Tables\CodeFoxtrot.CloudLocal.Tables.csproj" />
+    <ProjectReference Include="..\..\src\CodeFoxtrot.CloudLocal.Vault\CodeFoxtrot.CloudLocal.Vault.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Azure.Data.Tables" Version="12.11.0" />
+    <PackageReference Include="Azure.Identity" Version="1.21.0" />
+    <PackageReference Include="Azure.Messaging.ServiceBus" Version="7.20.1" />
+    <PackageReference Include="Azure.Security.KeyVault.Certificates" Version="4.8.0" />
+    <PackageReference Include="Azure.Security.KeyVault.Keys" Version="4.8.0" />
+    <PackageReference Include="Azure.Security.KeyVault.Secrets" Version="4.8.0" />
+    <PackageReference Include="Azure.Storage.Blobs" Version="12.26.0" />
+    <PackageReference Include="Azure.Storage.Queues" Version="12.24.0" />
+    <PackageReference Include="AWSSDK.DynamoDBv2" Version="4.0.14" />
+    <PackageReference Include="AWSSDK.KeyManagementService" Version="4.0.7" />
+    <PackageReference Include="AWSSDK.S3" Version="4.0.23.4" />
+    <PackageReference Include="AWSSDK.SecretsManager" Version="4.0.4.4" />
+    <PackageReference Include="AWSSDK.SimpleNotificationService" Version="4.0.2.15" />
+    <PackageReference Include="AWSSDK.SQS" Version="4.0.2" />
+    <PackageReference Include="BlazorJSComponents" Version="1.0.0" />
+  </ItemGroup>
+</Project>

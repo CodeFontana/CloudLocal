@@ -1,0 +1,63 @@
+@page "/certificates"
+@rendermode InteractiveServer
+@inherits DemoPage
+@implements IDisposable
+@using CodeFoxtrot.CloudLocal.Vault
+@inject ICertificateStore Store
+
+<PageTitle>Certificates</PageTitle>
+<h1>Certificates</h1>
+@if (ModeState.Current == CloudProviderMode.Aws)
+{
+    <div class="alert alert-warning">AWS mode has no private-certificate backend in this demo. Switch the provider to local files or Azure to create and load certificates.</div>
+}
+<div class="row g-3">
+    <div class="col-md-6"><label class="form-label" for="cert-name">Name</label><input id="cert-name" class="form-control" @bind="_name" /></div>
+    <div class="col-md-6"><label class="form-label" for="cert-cn">Common name</label><input id="cert-cn" class="form-control" @bind="_commonName" /></div>
+</div>
+<div class="d-flex flex-wrap gap-2 my-3">
+    <button class="btn btn-primary" disabled="@IsBusy" @onclick="CreateAsync">Create self-signed</button>
+    <button class="btn btn-outline-primary" disabled="@IsBusy" @onclick="LoadAsync">Load</button>
+    <button class="btn btn-outline-danger" disabled="@IsBusy" @onclick="DeleteAsync">Delete</button>
+</div>
+<ActionFeedback Message="@StatusMessage" Detail="@Detail" IsError="@IsError" />
+
+@code {
+    private string _name = "demo-cert";
+    private string _commonName = "demo-cert";
+
+    protected override void OnInitialized()
+    {
+        ModeState.Changed += HandleChanged;
+    }
+
+    private void HandleChanged()
+    {
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        ModeState.Changed -= HandleChanged;
+    }
+
+    private Task CreateAsync() => RunAsync(async () =>
+    {
+        await Store.CreateSelfSignedAsync(_name, _commonName);
+        return $"Created self-signed certificate '{_name}' with common name '{_commonName}'.";
+    });
+
+    private Task LoadAsync() => RunAsync(async () =>
+    {
+        using System.Security.Cryptography.X509Certificates.X509Certificate2 certificate = await Store.LoadAsync(_name);
+        return new ActionFeedbackResult(
+            $"Loaded certificate '{_name}'.",
+            $"{certificate.Subject}{Environment.NewLine}{certificate.Thumbprint}{Environment.NewLine}Private key: {certificate.HasPrivateKey}");
+    });
+
+    private Task DeleteAsync() => RunAsync(async () =>
+    {
+        await Store.DeleteAsync(_name);
+        return $"Deleted certificate '{_name}'.";
+    });
+}

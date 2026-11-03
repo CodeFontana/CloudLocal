@@ -1,0 +1,61 @@
+@page "/messaging/topics"
+@rendermode InteractiveServer
+@inherits DemoPage
+@using System.Text
+@using CodeFoxtrot.CloudLocal.Messaging
+@inject ITopicMessenger Messenger
+
+<PageTitle>Topics</PageTitle>
+<h1>Topics</h1>
+<div class="row g-3">
+    <div class="col-md-3"><label class="form-label" for="topic-name">Topic</label><input id="topic-name" class="form-control" @bind="_topic" /></div>
+    <div class="col-md-3"><label class="form-label" for="topic-a">Subscription A</label><input id="topic-a" class="form-control" @bind="_subscriptionA" /></div>
+    <div class="col-md-3"><label class="form-label" for="topic-b">Subscription B</label><input id="topic-b" class="form-control" @bind="_subscriptionB" /></div>
+    <div class="col-md-3"><label class="form-label" for="topic-body">Body</label><input id="topic-body" class="form-control" @bind="_body" /></div>
+</div>
+<div class="d-flex flex-wrap gap-2 my-3">
+    <button class="btn btn-outline-primary" disabled="@IsBusy" @onclick="CreateAsync">Create topic and subscriptions</button>
+    <button class="btn btn-primary" disabled="@IsBusy" @onclick="PublishAsync">Publish</button>
+    <button class="btn btn-outline-primary" disabled="@IsBusy" @onclick="ReceiveAAsync">Receive A</button>
+    <button class="btn btn-outline-primary" disabled="@IsBusy" @onclick="ReceiveBAsync">Receive B</button>
+</div>
+<ActionFeedback Message="@StatusMessage" Detail="@Detail" IsError="@IsError" />
+
+@code {
+    private string _topic = "events";
+    private string _subscriptionA = "a";
+    private string _subscriptionB = "b";
+    private string _body = "hello";
+
+    private Task CreateAsync() => RunAsync(async () =>
+    {
+        await Messenger.CreateTopicAsync(_topic);
+        await Messenger.CreateSubscriptionAsync(_topic, _subscriptionA);
+        await Messenger.CreateSubscriptionAsync(_topic, _subscriptionB);
+        return $"Created topic '{_topic}' with subscriptions '{_subscriptionA}' and '{_subscriptionB}'.";
+    });
+
+    private Task PublishAsync() => RunAsync(async () =>
+    {
+        await Messenger.PublishAsync(_topic, Encoding.UTF8.GetBytes(_body));
+        return $"Published '{_body}' to topic '{_topic}'.";
+    });
+
+    private Task ReceiveAAsync() => ReceiveAsync(_subscriptionA);
+
+    private Task ReceiveBAsync() => ReceiveAsync(_subscriptionB);
+
+    private Task ReceiveAsync(string subscription) => RunAsync(async () =>
+    {
+        IReadOnlyList<MessageDelivery> messages = await Messenger.ReceiveAsync(_topic, subscription, TimeSpan.FromSeconds(30), 1);
+        if (messages.Count == 0)
+        {
+            return new ActionFeedbackResult($"Subscription '{subscription}' on topic '{_topic}' has no unlocked message.");
+        }
+
+        MessageDelivery message = messages[0];
+        string body = Encoding.UTF8.GetString(message.Body);
+        await Messenger.CompleteAsync(_topic, subscription, message.MessageId, message.Receipt);
+        return new ActionFeedbackResult($"Received '{body}' from subscription '{subscription}' on topic '{_topic}' and completed message {message.MessageId}.", body);
+    });
+}

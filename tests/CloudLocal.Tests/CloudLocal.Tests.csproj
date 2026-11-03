@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\CodeFoxtrot.CloudLocal.Blobs\CodeFoxtrot.CloudLocal.Blobs.csproj" />
+    <ProjectReference Include="..\..\src\CodeFoxtrot.CloudLocal.Core\CodeFoxtrot.CloudLocal.Core.csproj" />
+    <ProjectReference Include="..\..\src\CodeFoxtrot.CloudLocal.Messaging\CodeFoxtrot.CloudLocal.Messaging.csproj" />
+    <ProjectReference Include="..\..\src\CodeFoxtrot.CloudLocal.Queues\CodeFoxtrot.CloudLocal.Queues.csproj" />
+    <ProjectReference Include="..\..\src\CodeFoxtrot.CloudLocal.Tables\CodeFoxtrot.CloudLocal.Tables.csproj" />
+    <ProjectReference Include="..\..\src\CodeFoxtrot.CloudLocal.Vault\CodeFoxtrot.CloudLocal.Vault.csproj" />
+  </ItemGroup>
+</Project>

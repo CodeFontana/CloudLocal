@@ -1,0 +1,10 @@
+<Solution>
+  <Project Path="src/CodeFoxtrot.CloudLocal.Core/CodeFoxtrot.CloudLocal.Core.csproj" />
+  <Project Path="src/CodeFoxtrot.CloudLocal.Blobs/CodeFoxtrot.CloudLocal.Blobs.csproj" />
+  <Project Path="src/CodeFoxtrot.CloudLocal.Tables/CodeFoxtrot.CloudLocal.Tables.csproj" />
+  <Project Path="src/CodeFoxtrot.CloudLocal.Queues/CodeFoxtrot.CloudLocal.Queues.csproj" />
+  <Project Path="src/CodeFoxtrot.CloudLocal.Vault/CodeFoxtrot.CloudLocal.Vault.csproj" />
+  <Project Path="src/CodeFoxtrot.CloudLocal.Messaging/CodeFoxtrot.CloudLocal.Messaging.csproj" />
+  <Project Path="tests/CloudLocal.Tests/CloudLocal.Tests.csproj" />
+  <Project Path="demo/BlazorUI/BlazorUI.csproj" />
+</Solution>

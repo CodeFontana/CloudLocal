@@ -1,0 +1,70 @@
+@page "/keys"
+@rendermode InteractiveServer
+@inherits DemoPage
+@using System.Text
+@using CodeFoxtrot.CloudLocal.Vault
+@inject IKeyStore Store
+
+<PageTitle>Keys</PageTitle>
+<h1>Keys</h1>
+<div class="row g-3">
+    <div class="col-md-4"><label class="form-label" for="key-name">Name</label><input id="key-name" class="form-control" @bind="_name" /></div>
+    <div class="col-md-8"><label class="form-label" for="key-text">Text</label><input id="key-text" class="form-control" @bind="_text" /></div>
+</div>
+<div class="d-flex flex-wrap gap-2 my-3">
+    <button class="btn btn-outline-primary" disabled="@IsBusy" @onclick="CreateAsync">Create RSA</button>
+    <button class="btn btn-primary" disabled="@IsBusy" @onclick="SignAsync">Sign</button>
+    <button class="btn btn-outline-primary" disabled="@IsBusy" @onclick="VerifyAsync">Verify</button>
+    <button class="btn btn-primary" disabled="@IsBusy" @onclick="EncryptAsync">Encrypt</button>
+    <button class="btn btn-outline-primary" disabled="@IsBusy" @onclick="DecryptAsync">Decrypt</button>
+</div>
+<ActionFeedback Message="@StatusMessage" Detail="@Detail" IsError="@IsError" />
+
+@code {
+    private string _name = "demo-key";
+    private string _text = "payload";
+    private byte[]? _signature;
+    private byte[]? _cipher;
+
+    private Task CreateAsync() => RunAsync(async () =>
+    {
+        await Store.CreateRsaAsync(_name);
+        return $"Created RSA key '{_name}'.";
+    });
+
+    private Task SignAsync() => RunAsync(async () =>
+    {
+        _signature = await Store.SignAsync(_name, Encoding.UTF8.GetBytes(_text));
+        return new ActionFeedbackResult($"Signed '{_text}' with key '{_name}'.", Convert.ToBase64String(_signature));
+    });
+
+    private Task VerifyAsync() => RunAsync(async () =>
+    {
+        if (_signature is null)
+        {
+            throw new InvalidOperationException($"Sign '{_text}' with key '{_name}' before verifying it.");
+        }
+
+        bool valid = await Store.VerifyAsync(_name, Encoding.UTF8.GetBytes(_text), _signature);
+        return valid
+            ? $"Signature matches '{_text}' for key '{_name}'."
+            : $"Signature does not match '{_text}' for key '{_name}'.";
+    });
+
+    private Task EncryptAsync() => RunAsync(async () =>
+    {
+        _cipher = await Store.EncryptAsync(_name, Encoding.UTF8.GetBytes(_text));
+        return new ActionFeedbackResult($"Encrypted '{_text}' with key '{_name}'.", Convert.ToBase64String(_cipher));
+    });
+
+    private Task DecryptAsync() => RunAsync(async () =>
+    {
+        if (_cipher is null)
+        {
+            throw new InvalidOperationException($"Encrypt '{_text}' with key '{_name}' before decrypting it.");
+        }
+
+        string plaintext = Encoding.UTF8.GetString(await Store.DecryptAsync(_name, _cipher));
+        return new ActionFeedbackResult($"Decrypted ciphertext with key '{_name}'.", plaintext);
+    });
+}

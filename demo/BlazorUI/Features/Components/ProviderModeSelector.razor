@@ -1,0 +1,42 @@
+@rendermode InteractiveServer
+@inject CloudModeState ModeState
+@implements IDisposable
+
+<div class="d-flex align-items-center gap-2 @Class">
+    <label class="form-label mb-0" for="@_selectId">Provider</label>
+    <select id="@_selectId" class="form-select form-select-sm w-auto" @bind="_selection" @bind:after="Apply">
+        <option value="@CloudProviderMode.Local">Local files</option>
+        <option value="@CloudProviderMode.Azure">Azure</option>
+        <option value="@CloudProviderMode.Aws">AWS</option>
+    </select>
+</div>
+
+@code {
+    private readonly string _selectId = $"provider-{Guid.NewGuid():N}";
+    private CloudProviderMode _selection;
+
+    [Parameter]
+    public string Class { get; set; } = "";
+
+    protected override void OnInitialized()
+    {
+        _selection = ModeState.Current;
+        ModeState.Changed += HandleChanged;
+    }
+
+    private void Apply()
+    {
+        ModeState.Set(_selection);
+    }
+
+    private void HandleChanged()
+    {
+        _selection = ModeState.Current;
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        ModeState.Changed -= HandleChanged;
+    }
+}

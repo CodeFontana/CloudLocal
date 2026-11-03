@@ -1,0 +1,29 @@
+<nav class="navbar navbar-expand d-flex fixed-top shadow-sm">
+    <div class="container-fluid">
+        <a class="navbar-brand d-flex align-items-center gap-2" href="">
+            <img src="img/Blazor.png" width="28" height="28" alt="Blazor" />
+            <span class="fw-semibold">CloudLocal</span>
+        </a>
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav me-auto d-none d-md-flex">
+                <li class="nav-item"><NavLink class="nav-link" Match="NavLinkMatch.All" href="">Home</NavLink></li>
+                <li class="nav-item"><NavLink class="nav-link" href="blobs">Blobs</NavLink></li>
+                <li class="nav-item"><NavLink class="nav-link" href="tables">Tables</NavLink></li>
+                <li class="nav-item"><NavLink class="nav-link" href="queues">Queues</NavLink></li>
+                <li class="nav-item"><NavLink class="nav-link" href="secrets">Secrets</NavLink></li>
+                <li class="nav-item"><NavLink class="nav-link" href="keys">Keys</NavLink></li>
+                <li class="nav-item"><NavLink class="nav-link" href="certificates">Certificates</NavLink></li>
+                <li class="nav-item"><NavLink class="nav-link" href="messaging/topics">Topics</NavLink></li>
+            </ul>
+            <ProviderModeSelector />
+            <button id="sidebarButton" type="button" class="d-flex d-md-none hamburger-button ms-auto" aria-label="Open navigation">
+                <div class="hamburger rounded">
+                    <div class="line"></div>
+                    <div class="line"></div>
+                    <div class="line"></div>
+                </div>
+            </button>
+        </div>
+        <ThemePicker Class="ms-2" />
+    </div>
+</nav>

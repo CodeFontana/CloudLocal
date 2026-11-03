@@ -1,0 +1,77 @@
+@inherits DemoPage
+@using System.Text
+@using CodeFoxtrot.CloudLocal.Messaging
+@inject IQueueMessenger Messenger
+
+<h2 class="h4 mt-4">Messaging queue</h2>
+<div class="row g-3">
+    <div class="col-md-4"><label class="form-label" for="messaging-queue">Queue</label><input id="messaging-queue" class="form-control" @bind="_queue" /></div>
+    <div class="col-md-8"><label class="form-label" for="messaging-body">Body</label><input id="messaging-body" class="form-control" @bind="_body" /></div>
+</div>
+<div class="d-flex flex-wrap gap-2 my-3">
+    <button class="btn btn-outline-primary" disabled="@IsBusy" @onclick="CreateAsync">Create</button>
+    <button class="btn btn-primary" disabled="@IsBusy" @onclick="SendAsync">Enqueue</button>
+    <button class="btn btn-outline-primary" disabled="@IsBusy" @onclick="ReceiveAsync">Receive</button>
+    <button class="btn btn-outline-success" disabled="@IsBusy" @onclick="CompleteAsync">Complete</button>
+    <button class="btn btn-outline-secondary" disabled="@IsBusy" @onclick="AbandonAsync">Abandon</button>
+    <button class="btn btn-outline-danger" disabled="@IsBusy" @onclick="DeadLetterAsync">Dead-letter</button>
+</div>
+<ActionFeedback Message="@StatusMessage" Detail="@Detail" IsError="@IsError" />
+
+@code {
+    private string _queue = "messages";
+    private string _body = "hello";
+    private string? _messageId;
+    private string? _receipt;
+
+    private Task CreateAsync() => RunAsync(async () =>
+    {
+        await Messenger.CreateQueueAsync(_queue);
+        return $"Created messaging queue '{_queue}'.";
+    });
+
+    private Task SendAsync() => RunAsync(async () =>
+    {
+        await Messenger.SendAsync(_queue, Encoding.UTF8.GetBytes(_body));
+        return $"Enqueued '{_body}' on messaging queue '{_queue}'.";
+    });
+
+    private Task ReceiveAsync() => RunAsync(async () =>
+    {
+        IReadOnlyList<MessageDelivery> messages = await Messenger.ReceiveAsync(_queue, TimeSpan.FromSeconds(30), 1);
+        if (messages.Count == 0)
+        {
+            return new ActionFeedbackResult($"Messaging queue '{_queue}' has no unlocked message.");
+        }
+
+        MessageDelivery message = messages[0];
+        _messageId = message.MessageId;
+        _receipt = message.Receipt;
+        return new ActionFeedbackResult(
+            $"Locked message {message.MessageId} on messaging queue '{_queue}'. Complete, abandon, or dead-letter it.",
+            Encoding.UTF8.GetString(message.Body));
+    });
+
+    private Task CompleteAsync() => SettleAsync("Completed", (id, receipt) => Messenger.CompleteAsync(_queue, id, receipt));
+
+    private Task AbandonAsync() => SettleAsync("Returned", (id, receipt) => Messenger.AbandonAsync(_queue, id, receipt));
+
+    private Task DeadLetterAsync() => SettleAsync("Dead-lettered", (id, receipt) => Messenger.DeadLetterAsync(_queue, id, receipt));
+
+    private Task SettleAsync(string verb, Func<string, string, Task> settle)
+    {
+        return RunAsync(async () =>
+        {
+            if (_messageId is null || _receipt is null)
+            {
+                throw new InvalidOperationException($"Receive a message on messaging queue '{_queue}' before settling it.");
+            }
+
+            string messageId = _messageId;
+            await settle(messageId, _receipt);
+            _messageId = null;
+            _receipt = null;
+            return $"{verb} message {messageId} on messaging queue '{_queue}'.";
+        });
+    }
+}

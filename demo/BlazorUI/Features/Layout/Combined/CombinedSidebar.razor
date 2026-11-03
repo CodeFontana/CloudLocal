@@ -1,0 +1,25 @@
+<div class="@Class">
+    <nav class="d-flex flex-column px-2 py-3 app-sidebar">
+        <a class="navbar-brand d-flex align-items-center gap-2 px-2 mb-2" href="">
+            <img src="img/Blazor.png" width="28" height="28" alt="Blazor" />
+            <span class="fw-semibold">CloudLocal</span>
+        </a>
+        <ProviderModeSelector Class="px-2 mb-3" />
+        <NavLink class="nav-link" Match="NavLinkMatch.All" href=""><i class="bi bi-house-door h5 pe-2"></i>Home</NavLink>
+        <NavLink class="nav-link" href="blobs"><i class="bi bi-folder2-open h5 pe-2"></i>Blobs</NavLink>
+        <NavLink class="nav-link" href="tables"><i class="bi bi-table h5 pe-2"></i>Tables</NavLink>
+        <NavLink class="nav-link" href="queues"><i class="bi bi-inbox h5 pe-2"></i>Queues</NavLink>
+        <NavLink class="nav-link" href="secrets"><i class="bi bi-key h5 pe-2"></i>Secrets</NavLink>
+        <NavLink class="nav-link" href="keys"><i class="bi bi-shield-lock h5 pe-2"></i>Keys</NavLink>
+        <NavLink class="nav-link" href="certificates"><i class="bi bi-patch-check h5 pe-2"></i>Certificates</NavLink>
+        <NavLink class="nav-link" href="messaging/topics"><i class="bi bi-diagram-3 h5 pe-2"></i>Topics</NavLink>
+        <div class="mt-auto pt-3 d-flex justify-content-center">
+            <ThemePicker />
+        </div>
+    </nav>
+</div>
+
+@code {
+    [Parameter]
+    public string Class { get; set; } = "";
+}
